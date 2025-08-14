@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Визуализация алгоритмов сортировки</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Визуализация алгоритмов сортировки</h1>
+            <p class="subtitle">Интерактивная демонстрация работы различных алгоритмов</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="algorithm-select">Алгоритм:</label>
+                <select id="algorithm-select">
+                    <option value="bubble">Пузырьковая сортировка</option>
+                    <option value="selection">Сортировка выбором</option>
+                    <option value="insertion">Сортировка вставками</option>
+                    <option value="quick">Быстрая сортировка</option>
+                    <option value="merge">Сортировка слиянием</option>
+                </select>
+            </div>
+
+            <div class="control-group">
+                <label for="array-size">Размер массива:</label>
+                <input type="range" id="array-size" min="10" max="100" value="50">
+                <span id="size-value">50</span>
+            </div>
+
+            <div class="control-group">
+                <label for="speed-control">Скорость анимации:</label>
+                <input type="range" id="speed-control" min="1" max="100" value="50">
+            </div>
+
+            <div class="button-group">
+                <button id="generate-btn" class="btn btn-secondary">Новый массив</button>
+                <button id="sort-btn" class="btn btn-primary">Сортировать</button>
+                <button id="pause-btn" class="btn btn-secondary" disabled>Пауза</button>
+                <button id="reset-btn" class="btn btn-secondary">Сброс</button>
+            </div>
+        </div>
+
+        <div class="visualization-container">
+            <div id="visualization"></div>
+        </div>
+
+        <div class="info-panel">
+            <div class="stats">
+                <div class="stat-item">
+                    <span class="stat-label">Сравнений:</span>
+                    <span id="comparisons" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Перестановок:</span>
+                    <span id="swaps" class="stat-value">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">Время:</span>
+                    <span id="time" class="stat-value">0.00s</span>
+                </div>
+            </div>
+
+            <div class="algorithm-info">
+                <h3>О алгоритме</h3>
+                <div id="algorithm-description"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="algorithms.js"></script>
+    <script src="visualizer.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>
