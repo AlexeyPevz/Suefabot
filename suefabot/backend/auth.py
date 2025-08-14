@@ -148,10 +148,24 @@ def require_telegram_auth(f):
             user_data = TelegramAuth.verify_jwt_token(token, secret_key)
             if not user_data:
                 return jsonify({'error': 'Invalid or expired token'}), 401
-                
-            request.telegram_user = user_data
             
+            request.telegram_user = user_data
+        
         else:
+            # Dev-режим: упрощенная аутентификация через заголовки для MVP
+            try:
+                if current_app.config.get('ENVIRONMENT', 'development') != 'production':
+                    dev_user_id = request.headers.get('X-Dev-User-Id')
+                    if dev_user_id:
+                        request.telegram_user = {
+                            'telegram_id': str(dev_user_id),
+                            'username': request.headers.get('X-Dev-Username', ''),
+                            'first_name': request.headers.get('X-Dev-First-Name', ''),
+                            'last_name': request.headers.get('X-Dev-Last-Name', '')
+                        }
+                        return f(*args, **kwargs)
+            except Exception:
+                pass
             return jsonify({'error': 'No authentication provided'}), 401
         
         return f(*args, **kwargs)

@@ -9,6 +9,36 @@ const api = axios.create({
   },
 });
 
+let authToken = null;
+let devUser = null;
+
+export const setupApiAuth = ({ token, user, initData }) => {
+  authToken = token || null;
+  devUser = user || null;
+
+  api.interceptors.request.use((config) => {
+    // JWT, если есть
+    if (authToken) {
+      config.headers['Authorization'] = `Bearer ${authToken}`;
+    }
+
+    // Telegram initData для бэкенда
+    if (initData) {
+      config.headers['X-Telegram-Init-Data'] = initData;
+    }
+
+    // Dev заголовки для упрощения запуска MVP в non-prod окружении
+    if (devUser?.id) {
+      config.headers['X-Dev-User-Id'] = String(devUser.id);
+      if (devUser.username) config.headers['X-Dev-Username'] = devUser.username;
+      if (devUser.first_name) config.headers['X-Dev-First-Name'] = devUser.first_name;
+      if (devUser.last_name) config.headers['X-Dev-Last-Name'] = devUser.last_name;
+    }
+
+    return config;
+  });
+};
+
 // API методы
 export const matchAPI = {
   create: async (userData, promise = null, stakeAmount = 0) => {

@@ -42,7 +42,9 @@ class APIClient:
             # Сначала аутентифицируемся
             # В production нужно использовать реальную initData
             headers = {
-                'X-Telegram-Init-Data': f'mock_data_for_{telegram_id}'
+                'X-Telegram-Init-Data': f'mock_data_for_{telegram_id}',
+                'X-Dev-User-Id': telegram_id,
+                'X-Dev-Username': username or ''
             }
             
             data = {
