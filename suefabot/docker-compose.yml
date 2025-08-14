@@ -102,6 +102,7 @@ services:
     environment:
       REACT_APP_API_URL: ${REACT_APP_API_URL:-http://localhost:5000}
       REACT_APP_WS_URL: ${REACT_APP_WS_URL:-ws://localhost:5000}
+      REACT_APP_SENTRY_DSN: ${REACT_APP_SENTRY_DSN:-}
     ports:
       - "3000:80"
     volumes:
