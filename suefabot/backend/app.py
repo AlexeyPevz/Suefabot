@@ -13,6 +13,7 @@ from models import Base, User, Match, MatchStatus, Transaction, TransactionType
 from game_logic import GameLogic
 from auth import require_telegram_auth, get_current_telegram_user, TelegramAuth
 from services.transaction_service import TransactionService
+from services.lootbox_service import LootboxService
 from middleware.rate_limiter import init_rate_limiter
 
 # Инициализация Flask
@@ -462,6 +463,102 @@ def make_choice(match_id):
             'status': 'waiting_for_opponent',
             'your_choice': choice
         })
+
+
+@app.route('/api/lootbox/starter', methods=['POST'])
+@require_telegram_auth
+def claim_starter_lootbox():
+    """Получить стартовый лутбокс"""
+    current_user = get_current_telegram_user()
+    telegram_id = current_user.get('telegram_id') or str(current_user.get('id'))
+    
+    session = Session()
+    try:
+        user = session.query(User).filter_by(telegram_id=telegram_id).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Выдаем стартовый лутбокс
+        success = LootboxService.give_starter_lootbox(session, user)
+        
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Стартовый лутбокс получен!'
+            })
+        else:
+            return jsonify({
+                'error': 'Стартовый лутбокс уже был получен'
+            }), 400
+            
+    finally:
+        session.close()
+
+
+@app.route('/api/lootbox/<int:chest_id>/open', methods=['POST'])
+@require_telegram_auth
+@rate_limiter.limit(max_requests=30, window=60)  # Ограничение на открытие
+def open_lootbox(chest_id):
+    """Открыть лутбокс"""
+    current_user = get_current_telegram_user()
+    telegram_id = current_user.get('telegram_id') or str(current_user.get('id'))
+    
+    session = Session()
+    try:
+        user = session.query(User).filter_by(telegram_id=telegram_id).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Открываем лутбокс
+        result = LootboxService.open_lootbox(session, user, chest_id)
+        
+        return jsonify(result)
+        
+    except ValueError as e:
+        return jsonify({'error': str(e)}), 400
+    except Exception as e:
+        session.rollback()
+        return jsonify({'error': 'Failed to open lootbox'}), 500
+    finally:
+        session.close()
+
+
+@app.route('/api/user/inventory', methods=['GET'])
+@require_telegram_auth
+def get_user_inventory():
+    """Получить инвентарь пользователя"""
+    current_user = get_current_telegram_user()
+    telegram_id = current_user.get('telegram_id') or str(current_user.get('id'))
+    
+    session = Session()
+    try:
+        user = session.query(User).filter_by(telegram_id=telegram_id).first()
+        if not user:
+            return jsonify({'error': 'User not found'}), 404
+        
+        # Получаем предметы пользователя
+        inventory = []
+        for user_item in user.inventory:
+            item = user_item.item
+            inventory.append({
+                'id': item.id,
+                'name': item.name,
+                'description': item.description,
+                'category': item.category,
+                'type': item.type,
+                'rarity': item.rarity.value,
+                'quantity': user_item.quantity,
+                'equipped': user_item.equipped,
+                'properties': item.properties or {}
+            })
+        
+        return jsonify({
+            'inventory': inventory,
+            'total_items': len(inventory)
+        })
+        
+    finally:
+        session.close()
 
 
 @app.route('/api/match/<match_id>/status', methods=['GET'])

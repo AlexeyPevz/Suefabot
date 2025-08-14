@@ -124,6 +124,9 @@ class Item(Base):
     image_url = Column(String(500))
     animation_url = Column(String(500))
     
+    # Additional properties (JSON)
+    properties = Column(JSON)
+    
     # Status
     is_active = Column(Boolean, default=True)
     is_seasonal = Column(Boolean, default=False)

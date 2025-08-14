@@ -1,0 +1,235 @@
+/* Базовые анимации для игры */
+
+/* Появление элементов */
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Пульсация для ожидания */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Вращение для выбора */
+@keyframes spinChoice {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(1.1);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+/* Тряска для проигрыша */
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10%, 30%, 50%, 70%, 90% {
+    transform: translateX(-5px);
+  }
+  20%, 40%, 60%, 80% {
+    transform: translateX(5px);
+  }
+}
+
+/* Победная анимация */
+@keyframes victory {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  25% {
+    transform: scale(1.2) rotate(5deg);
+  }
+  50% {
+    transform: scale(1.1) rotate(-5deg);
+  }
+  75% {
+    transform: scale(1.2) rotate(5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+/* Блеск для премиум скинов */
+@keyframes shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+/* Анимация удара */
+@keyframes strike {
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  40% {
+    transform: translateX(50px) scale(1.2);
+  }
+  60% {
+    transform: translateX(30px) scale(0.9);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
+}
+
+/* Анимация раскрытия лутбокса */
+@keyframes lootboxOpen {
+  0% {
+    transform: perspective(400px) rotateY(0deg) scale(1);
+  }
+  50% {
+    transform: perspective(400px) rotateY(180deg) scale(1.1);
+  }
+  100% {
+    transform: perspective(400px) rotateY(360deg) scale(1);
+  }
+}
+
+/* Сияние для редких предметов */
+@keyframes rareGlow {
+  0% {
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
+                0 0 30px rgba(255, 215, 0, 0.6);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(255, 215, 0, 0.5);
+  }
+}
+
+/* Эпическое сияние */
+@keyframes epicGlow {
+  0% {
+    box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 25px rgba(138, 43, 226, 0.9),
+                0 0 40px rgba(138, 43, 226, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(138, 43, 226, 0.5);
+  }
+}
+
+/* Легендарное сияние */
+@keyframes legendaryGlow {
+  0% {
+    box-shadow: 0 0 10px rgba(255, 0, 128, 0.6);
+  }
+  33% {
+    box-shadow: 0 0 30px rgba(255, 0, 128, 0.9),
+                0 0 50px rgba(255, 0, 128, 0.7);
+  }
+  66% {
+    box-shadow: 0 0 30px rgba(0, 255, 255, 0.9),
+                0 0 50px rgba(0, 255, 255, 0.7);
+  }
+  100% {
+    box-shadow: 0 0 10px rgba(255, 0, 128, 0.6);
+  }
+}
+
+/* Классы для применения анимаций */
+.animate-fade-in {
+  animation: fadeInScale 0.3s ease-out forwards;
+}
+
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.animate-spin {
+  animation: spinChoice 0.6s ease-in-out;
+}
+
+.animate-shake {
+  animation: shake 0.5s ease-in-out;
+}
+
+.animate-victory {
+  animation: victory 1s ease-in-out;
+}
+
+.animate-strike {
+  animation: strike 0.8s ease-out;
+}
+
+.animate-lootbox {
+  animation: lootboxOpen 1.5s ease-in-out;
+}
+
+/* Классы для сияния по редкости */
+.glow-common {
+  /* Обычные предметы без сияния */
+}
+
+.glow-rare {
+  animation: rareGlow 2s ease-in-out infinite;
+}
+
+.glow-epic {
+  animation: epicGlow 2s ease-in-out infinite;
+}
+
+.glow-legendary {
+  animation: legendaryGlow 3s ease-in-out infinite;
+}
+
+/* Эффект блеска для премиум скинов */
+.shimmer-effect {
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.7) 50%,
+    transparent 60%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
+
+/* Hover эффекты для выбора */
+.choice-hover {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.choice-hover:hover {
+  transform: translateY(-5px) scale(1.05);
+  filter: brightness(1.1);
+}
+
+/* Disabled состояние */
+.choice-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
