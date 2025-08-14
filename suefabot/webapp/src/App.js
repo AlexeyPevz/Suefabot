@@ -1,7 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useTelegram } from './hooks/useTelegram';
+import api, { setupApiAuth } from './utils/api';
 
 // Pages
 import HomePage from './pages/HomePage';
@@ -12,17 +13,38 @@ import ShopPage from './pages/ShopPage';
 
 function App() {
   const { tg, user } = useTelegram();
+  const [token, setToken] = useState(null);
 
   useEffect(() => {
     // Настройка Telegram WebApp
     tg.ready();
     tg.expand();
-    
-    // Установка цвета заголовка
     tg.setHeaderColor('bg_color');
-    
-    // Включение кнопки закрытия
     tg.enableClosingConfirmation();
+
+    // Выполнить аутентификацию через backend, получить JWT
+    const init = async () => {
+      try {
+        const initData = tg?.initData || '';
+        if (initData) {
+          const res = await api.post('/api/auth/telegram', { initData });
+          if (res?.data?.token) {
+            setToken(res.data.token);
+            setupApiAuth({ token: res.data.token, user: tg?.initDataUnsafe?.user, initData });
+          } else {
+            setupApiAuth({ token: null, user: tg?.initDataUnsafe?.user, initData });
+          }
+        } else {
+          // Dev режим без initData
+          setupApiAuth({ token: null, user: tg?.initDataUnsafe?.user, initData: null });
+        }
+      } catch (_) {
+        // В dev режиме продолжаем без токена
+        setupApiAuth({ token: null, user: tg?.initDataUnsafe?.user, initData: tg?.initData });
+      }
+    };
+
+    init();
   }, [tg]);
 
   return (
@@ -32,7 +54,7 @@ function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/play" element={<PlayPage />} />
           <Route path="/play/:mode" element={<PlayPage />} />
-          <Route path="/match/:matchId" element={<MatchPage />} />
+          <Route path="/match/:matchId" element={<MatchPage authToken={token} />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/shop" element={<ShopPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />

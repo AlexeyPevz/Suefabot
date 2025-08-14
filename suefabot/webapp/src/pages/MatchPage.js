@@ -8,10 +8,10 @@ import { matchAPI } from '../utils/api';
 
 const SOCKET_URL = process.env.REACT_APP_SOCKET_URL || 'http://localhost:5000';
 
-const MatchPage = () => {
+const MatchPage = ({ authToken }) => {
   const { matchId } = useParams();
   const navigate = useNavigate();
-  const { user, hapticFeedback } = useTelegram();
+  const { user, hapticFeedback, tg } = useTelegram();
   
   const [matchStatus, setMatchStatus] = useState('loading');
   const [selectedChoice, setSelectedChoice] = useState(null);
@@ -21,8 +21,11 @@ const MatchPage = () => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    // Подключаемся к сокету
-    const newSocket = io(SOCKET_URL);
+    // Подключаемся к сокету с auth токеном (если есть)
+    const newSocket = io(SOCKET_URL, {
+      auth: authToken ? { token: authToken } : {},
+      extraHeaders: tg?.initData ? { 'X-Telegram-Init-Data': tg.initData } : undefined,
+    });
     setSocket(newSocket);
 
     // Присоединяемся к комнате матча
@@ -50,7 +53,7 @@ const MatchPage = () => {
       newSocket.emit('leave_match', { match_id: matchId });
       newSocket.close();
     };
-  }, [matchId]);
+  }, [matchId, authToken]);
 
   const loadMatchStatus = async () => {
     try {

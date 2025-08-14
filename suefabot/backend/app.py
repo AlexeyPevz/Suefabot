@@ -575,7 +575,7 @@ def get_user_inventory():
                 'type': item.type,
                 'rarity': item.rarity.value,
                 'quantity': user_item.quantity,
-                'equipped': user_item.equipped,
+                'equipped': user_item.is_equipped,
                 'properties': item.properties or {}
             })
         
@@ -603,11 +603,21 @@ def get_match_status(match_id):
         if not match:
             return jsonify({'error': 'Match not found'}), 404
         
+        # Дополняем статус данными игроков для фронтенда
+        player1 = session.query(User).filter_by(id=match.player1_id).first() if match.player1_id else None
+        player2 = session.query(User).filter_by(id=match.player2_id).first() if match.player2_id else None
+        
         return jsonify({
             'match_id': match.id,
             'status': match.status.value,
             'created_at': match.created_at.isoformat(),
-            'completed': match.status == MatchStatus.COMPLETED
+            'completed': match.status == MatchStatus.COMPLETED,
+            'player1_telegram_id': player1.telegram_id if player1 else None,
+            'player2_telegram_id': player2.telegram_id if player2 else None,
+            'player1_name': (player1.full_name or player1.username) if player1 else None,
+            'player2_name': (player2.full_name or player2.username) if player2 else None,
+            'promise': match.promise,
+            'stake_amount': match.stake_amount
         })
     finally:
         session.close()
@@ -619,8 +629,17 @@ def handle_connect(auth):
     """Обработка подключения"""
     # Проверяем JWT токен
     if not auth or 'token' not in auth:
+        # В dev-режиме разрешаем подключение без токена, чтобы упростить запуск MVP
+        try:
+            if getattr(Config, 'ENVIRONMENT', 'development') != 'production':
+                websocket_connections.inc()
+                print(f'Dev client connected without auth token: {request.sid}')
+                emit('connected', {'message': 'Connected (dev mode, no auth)'})
+                return True
+        except Exception:
+            pass
         print(f'Client connection rejected - no auth: {request.sid}')
-        return False  # Отклоняем соединение
+        return False  # Отклоняем соединение в продакшне
     
     try:
         user_data = TelegramAuth.verify_jwt_token(auth['token'], Config.SECRET_KEY)
