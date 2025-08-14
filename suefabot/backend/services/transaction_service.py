@@ -108,12 +108,20 @@ class TransactionService:
             description=f"Победа в матче {match_id}"
         )
         
-        # Транзакция комиссии (если нужен отдельный учет)
+        # Транзакция комиссии на системный счет
         commission_transaction = None
         if commission > 0:
-            # Можно создать системного пользователя для учета комиссий
-            # или просто логировать в отдельной таблице
-            pass
+            # Получаем системного пользователя
+            system_user = session.query(User).filter_by(telegram_id="SYSTEM").first()
+            if system_user:
+                commission_transaction = TransactionService.create_transaction(
+                    session=session,
+                    user=system_user,
+                    transaction_type=TransactionType.COMMISSION,
+                    amount=commission,
+                    match_id=match_id,
+                    description=f"Комиссия с матча {match_id}"
+                )
         
         return winner_transaction, loser_transaction, commission_transaction
     

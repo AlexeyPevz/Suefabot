@@ -15,6 +15,7 @@ from auth import require_telegram_auth, get_current_telegram_user, TelegramAuth
 from services.transaction_service import TransactionService
 from services.lootbox_service import LootboxService
 from middleware.rate_limiter import init_rate_limiter
+from monitoring import init_monitoring, match_created_total, match_completed_total, active_matches, websocket_connections
 
 # Инициализация Flask
 app = Flask(__name__)
@@ -31,6 +32,9 @@ redis_client = redis.from_url(Config.REDIS_URL, decode_responses=True)
 
 # Инициализация rate limiter
 rate_limiter = init_rate_limiter(app, redis_client)
+
+# Инициализация мониторинга
+init_monitoring(app)
 
 # Database
 engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
@@ -199,9 +203,13 @@ def create_match():
         
         return jsonify({
             'match_id': match_id,
-            'status': 'waiting',
-            'timeout_seconds': Config.MATCH_TIMEOUT_SECONDS
-        })
+                    'status': 'waiting',
+        'timeout_seconds': Config.MATCH_TIMEOUT_SECONDS
+    })
+    
+    # Обновляем метрики
+    match_created_total.inc()
+    active_matches.inc()
     finally:
         session.close()
 

@@ -27,6 +27,9 @@ def init_database():
     session = Session()
     
     try:
+        # Создаем системного пользователя для комиссий
+        create_system_user(session)
+        
         # Добавляем базовые предметы
         add_starter_items(session)
         
@@ -41,6 +44,24 @@ def init_database():
         session.rollback()
     finally:
         session.close()
+
+
+def create_system_user(session):
+    """Создает системного пользователя для учета комиссий"""
+    from models import User
+    
+    SYSTEM_USER_ID = "SYSTEM"
+    
+    system_user = session.query(User).filter_by(telegram_id=SYSTEM_USER_ID).first()
+    if not system_user:
+        system_user = User(
+            telegram_id=SYSTEM_USER_ID,
+            username="system",
+            full_name="System Account",
+            stars_balance=0
+        )
+        session.add(system_user)
+        logger.info("Created system user for commission tracking")
 
 
 def add_starter_items(session):
