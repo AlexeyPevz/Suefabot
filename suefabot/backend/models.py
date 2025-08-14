@@ -28,6 +28,17 @@ class ItemRarity(enum.Enum):
     LEGENDARY = "legendary"
 
 
+class TransactionType(enum.Enum):
+    PURCHASE = "purchase"
+    MATCH_WIN = "match_win"
+    MATCH_LOSS = "match_loss"
+    MATCH_REFUND = "match_refund"
+    CHEST_OPEN = "chest_open"
+    REFUND = "refund"
+    BONUS = "bonus"
+    COMMISSION = "commission"
+
+
 class User(Base):
     __tablename__ = 'users'
     
@@ -56,7 +67,6 @@ class User(Base):
     matches_as_player1 = relationship("Match", foreign_keys="Match.player1_id", back_populates="player1")
     matches_as_player2 = relationship("Match", foreign_keys="Match.player2_id", back_populates="player2")
     inventory = relationship("UserItem", back_populates="user")
-    transactions = relationship("Transaction", back_populates="user")
     
     @property
     def win_rate(self):
@@ -114,6 +124,9 @@ class Item(Base):
     image_url = Column(String(500))
     animation_url = Column(String(500))
     
+    # Additional properties (JSON)
+    properties = Column(JSON)
+    
     # Status
     is_active = Column(Boolean, default=True)
     is_seasonal = Column(Boolean, default=False)
@@ -145,24 +158,22 @@ class Transaction(Base):
     
     id = Column(Integer, primary_key=True)
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    match_id = Column(String(50), ForeignKey('matches.id'), nullable=True)
     
-    # Transaction data
-    type = Column(String(50))  # purchase, match_win, match_loss, chest_open
-    amount = Column(Integer)
-    stars_before = Column(Integer)
-    stars_after = Column(Integer)
+    # Transaction details
+    type = Column(Enum(TransactionType), nullable=False)
+    amount = Column(Integer, nullable=False)
+    commission = Column(Integer, default=0)
+    balance_before = Column(Integer, nullable=False)
+    balance_after = Column(Integer, nullable=False)
     
-    # Additional data
-    item_id = Column(Integer, ForeignKey('items.id'))
-    match_id = Column(String(50), ForeignKey('matches.id'))
-    metadata = Column(JSON)
-    
+    # Metadata
+    description = Column(String(500))
     created_at = Column(DateTime, default=datetime.utcnow)
     
     # Relationships
-    user = relationship("User", back_populates="transactions")
-    item = relationship("Item")
-    match = relationship("Match")
+    user = relationship("User", backref="transactions")
+    match = relationship("Match", backref="transactions")
 
 
 class Chest(Base):

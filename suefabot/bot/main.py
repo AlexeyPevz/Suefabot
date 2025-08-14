@@ -6,6 +6,8 @@ from aiogram.types import InlineQuery, InlineQueryResultArticle, InputTextMessag
 from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
 from aiohttp import web
 
+import aiohttp
+
 from config import settings
 from keyboards import (
     get_main_menu_keyboard,
@@ -248,7 +250,15 @@ async def callback_shop_category(callback: types.CallbackQuery):
 @dp.inline_query()
 async def inline_query_handler(query: InlineQuery):
     """Обработчик inline-запросов"""
+    from api_client import api_client
+    
     results = []
+    
+    # Получаем данные пользователя
+    user = query.from_user
+    telegram_id = str(user.id)
+    username = user.username or ""
+    full_name = user.full_name or ""
     
     # Результат для вызова на игру
     challenge_result = InlineQueryResultArticle(
@@ -262,7 +272,7 @@ async def inline_query_handler(query: InlineQuery):
             ),
             parse_mode="HTML"
         ),
-        reply_markup=get_challenge_keyboard("temp_match_id"),
+        reply_markup=get_challenge_keyboard("creating..."),
         thumb_url="https://via.placeholder.com/100x100.png?text=⚔️"
     )
     results.append(challenge_result)
@@ -289,6 +299,116 @@ async def inline_query_handler(query: InlineQuery):
     results.append(invite_result)
     
     await query.answer(results, cache_time=300)
+
+
+@dp.callback_query(F.data.startswith("accept_challenge:"))
+async def accept_challenge(callback: types.CallbackQuery):
+    """Обработчик принятия вызова"""
+    from api_client import api_client
+    
+    match_id = callback.data.split(":")[1]
+    
+    # Если match_id это "creating...", создаем реальный матч
+    if match_id == "creating...":
+        # Извлекаем параметры из сообщения
+        promise = ""
+        stake_amount = 0
+        
+        message_text = callback.message.text
+        if "Проигравший:" in message_text:
+            promise_line = [line for line in message_text.split('\n') if "Проигравший:" in line]
+            if promise_line:
+                promise = promise_line[0].split("Проигравший:")[1].strip()
+        
+        if "Ставка:" in message_text:
+            stake_line = [line for line in message_text.split('\n') if "Ставка:" in line]
+            if stake_line:
+                try:
+                    stake_amount = int(stake_line[0].split()[1])
+                except:
+                    stake_amount = 0
+        
+        # Получаем данные создателя матча
+        creator = callback.from_user
+        
+        # Создаем матч через API
+        match_data = await api_client.create_match(
+            telegram_id=str(creator.id),
+            username=creator.username or "",
+            full_name=creator.full_name or "",
+            promise=promise,
+            stake_amount=stake_amount
+        )
+        
+        if match_data:
+            match_id = match_data['match_id']
+            # Обновляем сообщение с реальным ID матча
+            await callback.message.edit_reply_markup(
+                reply_markup=get_challenge_keyboard(match_id)
+            )
+        else:
+            await callback.answer("Ошибка создания матча. Попробуйте позже.", show_alert=True)
+            return
+    
+    # Переходим к матчу
+    await callback.message.edit_text(
+        f"🎮 <b>Матч начался!</b>\n\n"
+        f"ID матча: <code>{match_id}</code>\n\n"
+        f"🔗 Перейти в игру:",
+        reply_markup=get_inline_game_button(match_id),
+        parse_mode="HTML"
+    )
+    await callback.answer("Матч начался! Сделайте свой выбор в игре.")
+
+
+@dp.callback_query(F.data.startswith("decline_challenge:"))
+async def decline_challenge(callback: types.CallbackQuery):
+    """Обработчик отклонения вызова"""
+    await callback.message.edit_text(
+        "❌ <b>Вызов отклонен</b>\n\n"
+        "Игрок не готов к матчу. Попробуйте позже!",
+        parse_mode="HTML"
+    )
+    await callback.answer()
+
+
+@dp.callback_query(F.data == "profile")
+async def show_profile(callback: types.CallbackQuery):
+    """Показать профиль пользователя"""
+    from api_client import api_client
+    
+    # Получаем данные из API
+    user_data = await api_client.get_user_profile(str(callback.from_user.id))
+    
+    if user_data:
+        win_rate = user_data.get('win_rate', 0)
+        profile_text = (
+            "👤 <b>Ваш профиль</b>\n\n"
+            f"🆔 ID: <code>{callback.from_user.id}</code>\n"
+            f"📝 Имя: {user_data.get('full_name', callback.from_user.full_name)}\n\n"
+            "📊 <b>Статистика</b>\n"
+            f"🎮 Всего игр: {user_data.get('total_games', 0)}\n"
+            f"✅ Побед: {user_data.get('wins', 0)}\n"
+            f"❌ Поражений: {user_data.get('losses', 0)}\n"
+            f"🤝 Ничьих: {user_data.get('draws', 0)}\n"
+            f"📈 Винрейт: {win_rate:.1f}%\n\n"
+            f"💰 Баланс: {user_data.get('stars_balance', 0)} ⭐️"
+        )
+    else:
+        profile_text = (
+            "👤 <b>Ваш профиль</b>\n\n"
+            f"🆔 ID: <code>{callback.from_user.id}</code>\n"
+            f"📝 Имя: {callback.from_user.full_name}\n\n"
+            "⚠️ Не удалось загрузить статистику.\n"
+            "Попробуйте позже."
+        )
+    
+    await callback.message.answer(
+        profile_text,
+        reply_markup=get_back_button(),
+        parse_mode="HTML"
+    )
+    await callback.answer()
 
 
 async def on_startup(bot: Bot) -> None:
