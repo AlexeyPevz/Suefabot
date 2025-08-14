@@ -16,6 +16,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Инициализация Sentry (если сконфигурирован DSN)
+try:
+    import sentry_sdk
+    if Config.SENTRY_DSN:
+        sentry_sdk.init(dsn=Config.SENTRY_DSN, traces_sample_rate=0.1, environment=getattr(Config, 'ENVIRONMENT', 'development'))
+except Exception:
+    pass
+
 # Инициализация БД
 engine = create_engine(Config.SQLALCHEMY_DATABASE_URI)
 Session = sessionmaker(bind=engine)

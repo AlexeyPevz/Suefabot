@@ -21,10 +21,14 @@ class Config:
     # Redis
     REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
     
+    # Sentry
+    SENTRY_DSN = os.getenv('SENTRY_DSN', '')
+    
     # CORS
     CORS_ORIGINS = os.getenv('CORS_ORIGINS', 'http://localhost:3000').split(',')
     
     # Server
+    ENVIRONMENT = os.getenv('ENVIRONMENT', 'development')
     HOST = os.getenv('HOST', '0.0.0.0')
     PORT = int(os.getenv('PORT', 5000))
     
