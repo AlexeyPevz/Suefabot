@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     webhook_path: str = Field("/webhook", env="WEBHOOK_PATH")
     webhook_port: int = Field(8443, env="WEBHOOK_PORT")
     
+    # Observability
+    sentry_dsn: str = Field("", env="SENTRY_DSN")
+    
     # Game settings
     max_free_games_per_month: int = 10
     match_timeout_seconds: int = 60

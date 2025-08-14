@@ -18,3 +18,4 @@ pytest-cov==4.1.0
 pytest-asyncio==0.21.1
 alembic==1.13.1
 prometheus-client==0.19.0
+sentry-sdk[flask]==1.39.1

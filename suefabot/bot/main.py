@@ -26,6 +26,14 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Инициализация Sentry (если указан DSN)
+try:
+    import sentry_sdk
+    if settings.sentry_dsn:
+        sentry_sdk.init(dsn=settings.sentry_dsn, traces_sample_rate=0.1, environment=settings.environment)
+except Exception:
+    pass
+
 # Инициализация бота и диспетчера
 bot = Bot(token=settings.bot_token)
 dp = Dispatcher()

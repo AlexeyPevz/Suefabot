@@ -21,6 +21,20 @@ from monitoring import init_monitoring, match_created_total, match_completed_tot
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# Инициализация Sentry (если сконфигурирован DSN)
+try:
+    import sentry_sdk
+    from sentry_sdk.integrations.flask import FlaskIntegration
+    if Config.SENTRY_DSN:
+        sentry_sdk.init(
+            dsn=Config.SENTRY_DSN,
+            integrations=[FlaskIntegration()],
+            traces_sample_rate=0.2,
+            environment=Config.ENVIRONMENT,
+        )
+except Exception:
+    pass
+
 # CORS для WebApp
 CORS(app, origins=Config.CORS_ORIGINS, supports_credentials=True)
 
@@ -201,15 +215,15 @@ def create_match():
             json.dumps(match_data)
         )
         
+        # Обновляем метрики ДО возврата ответа
+        match_created_total.inc()
+        active_matches.inc()
+        
         return jsonify({
             'match_id': match_id,
-                    'status': 'waiting',
-        'timeout_seconds': Config.MATCH_TIMEOUT_SECONDS
-    })
-    
-    # Обновляем метрики
-    match_created_total.inc()
-    active_matches.inc()
+            'status': 'waiting',
+            'timeout_seconds': Config.MATCH_TIMEOUT_SECONDS
+        })
     finally:
         session.close()
 
@@ -417,6 +431,9 @@ def make_choice(match_id):
                     )
             
             session.commit()
+            # Метрики завершения матча
+            match_completed_total.inc()
+            active_matches.dec()
             
             # Формируем результат
             result_message = GameLogic.get_result_message(
@@ -475,6 +492,7 @@ def make_choice(match_id):
 
 @app.route('/api/lootbox/starter', methods=['POST'])
 @require_telegram_auth
+@rate_limiter.limit(max_requests=5, window=60)
 def claim_starter_lootbox():
     """Получить стартовый лутбокс"""
     current_user = get_current_telegram_user()
@@ -533,6 +551,7 @@ def open_lootbox(chest_id):
 
 @app.route('/api/user/inventory', methods=['GET'])
 @require_telegram_auth
+@rate_limiter.limit(max_requests=60, window=60)
 def get_user_inventory():
     """Получить инвентарь пользователя"""
     current_user = get_current_telegram_user()
@@ -611,6 +630,7 @@ def handle_connect(auth):
         
         # Сохраняем данные пользователя в сессии
         session['telegram_user'] = user_data
+        websocket_connections.inc()
         print(f'Client connected: {request.sid}, user: {user_data.get("telegram_id")}')
         emit('connected', {'message': 'Successfully connected to game server'})
         return True
@@ -622,6 +642,7 @@ def handle_connect(auth):
 @socketio.on('disconnect')
 def handle_disconnect():
     """Обработка отключения"""
+    websocket_connections.dec()
     print(f'Client disconnected: {request.sid}')
 
 
