@@ -11,6 +11,9 @@ class Config:
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
     DEBUG = os.getenv('DEBUG', 'True').lower() == 'true'
     
+    # Telegram
+    BOT_TOKEN = os.getenv('BOT_TOKEN', '')
+    
     # Database
     SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'postgresql://localhost/suefabot')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
